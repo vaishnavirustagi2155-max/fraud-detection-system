@@ -1,186 +1,136 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
-import pickle
-import os
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.preprocessing import StandardScaler, LabelEncoder
+import shap
 import matplotlib.pyplot as plt
 
-# ---------------- PAGE ----------------
+from sklearn.ensemble import IsolationForest
+from sklearn.preprocessing import StandardScaler
+
 st.set_page_config(page_title="Fraud Detection", layout="wide")
-st.title("💳 AI Fraud Detection Dashboard")
 
-# ---------------- COLUMN NORMALIZATION ----------------
-def normalize_and_map_columns(df):
-    df.columns = df.columns.str.strip()
+# 🎨 UI (TEXT WHITE ONLY)
+st.markdown("""
+<style>
+.stApp {
+    background: linear-gradient(to right, #141e30, #243b55);
+}
 
-    mapping = {
-        "amt": "Amount",
-        "transaction_amount": "Amount",
-        "amount_usd": "Amount",
-        "money": "Amount",
+h1, h2, h3, h4, h5, h6, p, label {
+    color: white !important;
+}
 
-        "transaction_time": "Time",
-        "timestamp": "Time",
+/* Upload box fix */
+section[data-testid="stFileUploader"] {
+    background-color: #1e2a38;
+    border: 1px solid #00c6ff;
+    padding: 10px;
+    border-radius: 10px;
+}
 
-        "label": "Class",
-        "fraud": "Class",
-        "is_fraud": "Class",
-        "target": "Class"
-    }
+section[data-testid="stFileUploader"] label,
+section[data-testid="stFileUploader"] div {
+    color: white !important;
+}
 
-    df = df.rename(columns=lambda x: mapping.get(x.lower(), x))
-    return df
+/* Metrics */
+[data-testid="stMetricValue"], 
+[data-testid="stMetricLabel"] {
+    color: white !important;
+}
+</style>
+""", unsafe_allow_html=True)
 
-# ---------------- ENCODE CATEGORICAL ----------------
-def encode_categorical(df, encoders=None):
-    if encoders is None:
-        encoders = {}
+st.title("🚨 Dynamic Fraud Detection System")
 
-    for col in df.columns:
-        if df[col].dtype == "object":
-            if col in encoders:
-                le = encoders[col]
-                df[col] = df[col].astype(str).map(
-                    lambda x: le.transform([x])[0] if x in le.classes_ else 0
-                )
-            else:
-                le = LabelEncoder()
-                df[col] = le.fit_transform(df[col].astype(str))
-                encoders[col] = le
+uploaded_file = st.file_uploader("📁 Upload CSV", type=["csv"])
 
-    return df, encoders
+if uploaded_file:
+    df = pd.read_csv(uploaded_file)
 
-# ---------------- FIX FEATURES ----------------
-def fix_features(df, features):
-    df.columns = df.columns.str.strip()
+    st.subheader("📊 Dataset Preview")
+    st.write(df.head())
 
-    feature_map = {f.lower(): f for f in features}
-    df = df.rename(columns=lambda x: feature_map.get(x.lower(), x))
+    # ⚡ SPEED CONTROL
+    if len(df) > 20000:
+        st.warning("⚡ Using 10,000 rows for speed")
+        df = df.sample(10000, random_state=42)
 
-    for col in features:
-        if col not in df.columns:
-            df[col] = 0
+    df = df.reset_index(drop=True)
 
-    return df[features]
+    # 🔄 Preprocess
+    X = pd.get_dummies(df)
+    X.fillna(0, inplace=True)
 
-# ---------------- LOAD MODEL ----------------
-model, scaler, features, encoders = None, None, None, None
+    # ✅ FIX dtype error
+    X = X.astype(float)
 
-if os.path.exists("models/model.pkl"):
-    model = pickle.load(open("models/model.pkl", "rb"))
-    scaler = pickle.load(open("models/scaler.pkl", "rb"))
-    features = pickle.load(open("models/features.pkl", "rb"))
-    # encoders = pickle.load(open("models/encoders.pkl", "rb"))
-    st.success("✅ Model Loaded")
-else:
-    st.info("ℹ️ Upload dataset to train model")
+    scaler = StandardScaler()
+    X_scaled = scaler.fit_transform(X)
 
-# ---------------- UPLOAD ----------------
-file = st.file_uploader("📂 Upload CSV", type=["csv"])
+    # ✅ 🔥 ONLY CHANGE → DYNAMIC MODEL
+    model = IsolationForest(contamination="auto", random_state=42)
 
-if file:
-    df = pd.read_csv(file)
-    df = normalize_and_map_columns(df)
+    model.fit(X_scaled)
 
-    st.subheader("📊 Preview")
-    st.dataframe(df.head())
+    preds = model.predict(X_scaled)
+    preds = np.where(preds == -1, 1, 0)
 
-    if "Class" not in df.columns:
-        st.error("❌ Dataset must contain 'Class'")
-        st.stop()
-
-    X_input = df.drop("Class", axis=1)
-
-    # ---------------- MODEL ----------------
-    if model is not None:
-        if set([c.lower() for c in X_input.columns]) == set([f.lower() for f in features]):
-
-            st.success("✅ Using existing model")
-
-            X_fixed = fix_features(X_input.copy(), features)
-            X_fixed, _ = encode_categorical(X_fixed, encoders)
-
-            X_scaled = scaler.transform(X_fixed)
-            preds = model.predict(X_scaled)
-
-        else:
-            st.warning("⚠️ Dataset changed → Retraining")
-
-            X = X_input.copy()
-            y = df["Class"]
-
-            X, encoders = encode_categorical(X)
-
-            features = list(X.columns)
-
-            scaler = StandardScaler()
-            X_scaled = scaler.fit_transform(X)
-
-            model = RandomForestClassifier()
-            model.fit(X_scaled, y)
-
-            preds = model.predict(X_scaled)
-
-            os.makedirs("models", exist_ok=True)
-            pickle.dump(model, open("models/model.pkl", "wb"))
-            pickle.dump(scaler, open("models/scaler.pkl", "wb"))
-            pickle.dump(features, open("models/features.pkl", "wb"))
-            pickle.dump(encoders, open("models/encoders.pkl", "wb"))
-
-            st.success("✅ New model trained")
-
-    else:
-        st.info("🔄 Training model...")
-
-        X = X_input.copy()
-        y = df["Class"]
-
-        X, encoders = encode_categorical(X)
-
-        features = list(X.columns)
-
-        scaler = StandardScaler()
-        X_scaled = scaler.fit_transform(X)
-
-        model = RandomForestClassifier()
-        model.fit(X_scaled, y)
-
-        preds = model.predict(X_scaled)
-
-        os.makedirs("models", exist_ok=True)
-        pickle.dump(model, open("models/model.pkl", "wb"))
-        pickle.dump(scaler, open("models/scaler.pkl", "wb"))
-        pickle.dump(features, open("models/features.pkl", "wb"))
-        pickle.dump(encoders, open("models/encoders.pkl", "wb"))
-
-        st.success("✅ Model trained")
-
-    # ---------------- RESULTS ----------------
-    fraud_count = int(np.sum(preds))
-    total = len(preds)
-    safe_count = total - fraud_count
-
-    st.subheader("📊 Results")
-
-    col1, col2, col3 = st.columns(3)
-    col1.metric("Total", total)
-    col2.metric("Fraud 🚨", fraud_count)
-    col3.metric("Safe ✅", safe_count)
-
-    if fraud_count > 0:
-        st.error(f"🚨 {fraud_count} Fraud detected!")
-    else:
-        st.success("✅ No Fraud")
-
-    # ---------------- CHART ----------------
-    fig, ax = plt.subplots()
-    ax.bar(["Fraud", "Safe"], [fraud_count, safe_count])
-    st.pyplot(fig)
-
-    # ---------------- TABLE ----------------
     df["Prediction"] = preds
 
-    with st.expander("🔍 View Full Data"):
-        st.dataframe(df)
+    # 📊 Metrics
+    st.subheader("📈 Results")
+    col1, col2 = st.columns(2)
+    col1.metric("🚨 Fraud Detected", int(np.sum(preds)))
+    col2.metric("📦 Total Records", len(preds))
+
+    # 📄 Data
+    st.subheader("📄 Dataset with Predictions")
+    st.write(df)
+
+    # 🚨 Fraud rows
+    st.subheader("🚨 Fraud Transactions")
+    fraud_df = df[df["Prediction"] == 1]
+
+    if len(fraud_df) > 0:
+        st.write(fraud_df)
+    else:
+        st.warning("No fraud detected")
+
+    # 🔍 SHAP
+    st.subheader("🔍 SHAP Explanation")
+
+    if len(fraud_df) > 0:
+
+        selected_index = st.selectbox(
+            "Select Fraud Transaction Index",
+            fraud_df.index.tolist()
+        )
+
+        # ⚡ small background for speed
+        background = shap.sample(X, 100)
+
+        explainer = shap.Explainer(model, background)
+
+        shap_values = explainer(X.iloc[[selected_index]])
+
+        st.write("### 🧠 Why this transaction is fraud:")
+
+        shap_row = shap_values.values[0]
+
+        feature_impact = sorted(
+            zip(X.columns, shap_row),
+            key=lambda x: abs(x[1]),
+            reverse=True
+        )[:5]
+
+        for f, v in feature_impact:
+            st.write(f"🔹 {f}: {round(v, 4)}")
+
+        # 📊 Plot
+        fig, ax = plt.subplots()
+        shap.plots.waterfall(shap_values[0], show=False)
+        st.pyplot(fig)
+
+    else:
+        st.info("No fraud → SHAP not available")
