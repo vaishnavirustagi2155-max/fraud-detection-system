@@ -118,7 +118,7 @@ Fraud-Detection-System/
 Clone the repository
 
 ```bash
-git clone YOUR_GITHUB_REPOSITORY_LINK
+git clone https://github.com/vaishnavirustagi2155-max/fraud-detection-system
 ```
 
 Move into the project directory
@@ -187,8 +187,4 @@ The application displays:
 
 Final Year B.Tech Student (Data Science)
 
----
 
-## ⭐ If you like this project
-
-Give this repository a ⭐ on GitHub.
