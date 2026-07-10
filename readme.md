@@ -1,14 +1,10 @@
 # 💳 Smart Fraud Detection System using Machine Learning
 
-[![Python](https://img.shields.io/badge/Python-3.10+-blue.svg)]()
-[![Streamlit](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://fraud-detection-system-ychf3fbbmh9ky7jfewy4rq.streamlit.app/)
-[![License](https://img.shields.io/badge/License-MIT-green.svg)]()
-
 An end-to-end **Machine Learning-based Fraud Detection System** that identifies fraudulent financial transactions using **Random Forest Classifier**. The application provides a simple and interactive **Streamlit dashboard** where users can upload transaction datasets, analyze them, and receive fraud predictions in real time.
 
 ---
 
-## 🌐 Live Demo
+##  Live Demo
 
 **Streamlit Application**
 
@@ -16,7 +12,7 @@ https://fraud-detection-system-ychf3fbbmh9ky7jfewy4rq.streamlit.app/
 
 ---
 
-## 📌 Project Overview
+##  Project Overview
 
 Financial fraud is one of the biggest challenges faced by banks and digital payment systems. Manual verification of millions of daily transactions is impractical.
 
@@ -31,20 +27,20 @@ This project automates fraud detection using Machine Learning by:
 
 ---
 
-## ✨ Features
+##  Features
 
-- 📂 Upload transaction datasets (.csv)
-- 🤖 Machine Learning based fraud prediction
-- 🔄 Automatic column normalization
-- 📊 Interactive dashboard
-- 📈 Fraud vs Safe visualization
-- 📋 Prediction table
-- ⚡ Dynamic preprocessing pipeline
-- 🌐 Streamlit web interface
+-  Upload transaction datasets (.csv)
+-  Machine Learning based fraud prediction
+-  Automatic column normalization
+-  Interactive dashboard
+-  Fraud vs Safe visualization
+-  Prediction table
+-  Dynamic preprocessing pipeline
+-  Streamlit web interface
 
 ---
 
-## 🧠 Machine Learning Workflow
+## Machine Learning Workflow
 
 ```text
 Dataset
@@ -70,7 +66,7 @@ Visualization & Dashboard
 
 ---
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 **Programming Language**
 
@@ -93,7 +89,7 @@ Visualization & Dashboard
 
 ---
 
-## 📁 Project Structure
+##  Project Structure
 
 ```text
 Fraud-Detection-System/
@@ -113,7 +109,7 @@ Fraud-Detection-System/
 
 ---
 
-## ⚙️ Installation
+##  Installation
 
 Clone the repository
 
@@ -141,7 +137,7 @@ streamlit run app.py
 
 ---
 
-## 🚀 Usage
+##  Usage
 
 1. Launch the application.
 2. Upload a CSV transaction dataset.
@@ -156,7 +152,7 @@ streamlit run app.py
 
 ---
 
-## 📊 Output
+##  Output
 
 The application displays:
 
@@ -168,7 +164,7 @@ The application displays:
 
 ---
 
-## 🎯 Future Improvements
+##  Future Improvements
 
 - SHAP Explainable AI
 - XGBoost model comparison
@@ -181,7 +177,7 @@ The application displays:
 
 ---
 
-## 👨‍💻 Developer
+##  Developer
 
 **Vaishnavi Rustagi**
 
